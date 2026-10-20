@@ -1,44 +1,60 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "mongodb"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  MENTOR
+  ADMIN
+}
+
+enum ProjectStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model User {
-    id              String     @id @default(auto()) @map("_id") @db.ObjectId
-    fullName        String
-    email           String     @unique
-    phone           String?
-    bio             String?
-    avatar          String?
-    password        String
-    role            UserRole
-    status          UserStatus @default(ACTIVE)
-    isEmailVerified Boolean    @default(false)
-    createdById     String?    @db.ObjectId
-    lastLoginAt     DateTime?
-    createdAt       DateTime   @default(now())
-    updatedAt       DateTime   @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(STUDENT)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@index([role])
-    @@map("Users")
+  projects         Project[] @relation("ProjectStudent")
+  reviewedProjects Project[] @relation("ProjectReviewer")
+
+  @@map("users")
 }
 
-enum UserRole {
-    SUPER_ADMIN
-    COMPANY_OWNER
-    ADMIN_MANAGER
-    SALES_REP_MANAGER
-    SALES_REP
-    CALL_CENTER_MANAGER
-    APPOINTMENT_SETTER
-}
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  repoUrl     String
+  repoKey     String        @unique
+  liveUrl     String
+  liveKey     String        @unique
+  description String
+  status      ProjectStatus @default(PENDING)
+  reviewNote  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-enum UserStatus {
-    ACTIVE
-    INACTIVE
-    BLOCKED
+  studentId  String
+  student    User    @relation("ProjectStudent", fields: [studentId], references: [id], onDelete: Restrict)
+  reviewerId String?
+  reviewer   User?   @relation("ProjectReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([studentId, createdAt])
+  @@map("projects")
 }
