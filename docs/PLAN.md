@@ -21,6 +21,7 @@ Source requirements: [REQUIREMENTS.md](REQUIREMENTS.md)
 | Admin creation | `prisma db seed`, credentials from env | Required by spec |
 | Mentor creation | Only an ADMIN can create a mentor (`POST /users/mentors`); optional demo mentor in the seed | Mentors cannot sign up themselves |
 | Review access | MENTOR and ADMIN can review; only ADMIN manages mentors | Admin is a superset of mentor |
+| Account state | `isActive` boolean on `User` (false = deactivated, cannot log in) | Simple boolean instead of a status enum |
 | Token | JWT in an httpOnly cookie, also accepted as `Authorization: Bearer` | XSS-safe for the browser, still usable from API clients |
 | Same-origin | Next.js rewrites `/api/*` to Express | No CORS or cross-site cookie problems in any deployment |
 | Duplicate definition | Same normalized **repo URL** or same normalized **live URL** (any student) | One repo = one submission |
@@ -49,6 +50,7 @@ Source requirements: [REQUIREMENTS.md](REQUIREMENTS.md)
 | See all submissions, filter, stats | no | yes | yes |
 | Approve / reject | no | yes | yes |
 | Create / list mentors | no | no | yes |
+| Activate / deactivate a mentor | no | no | yes |
 
 ## 3. Data model (PostgreSQL via Prisma)
 
@@ -82,6 +84,7 @@ Project
 | PATCH | `/projects/:id/review` | MENTOR, ADMIN | `{ status, note? }` |
 | POST | `/users/mentors` | ADMIN | create a mentor (name, email, initial password) |
 | GET | `/users/mentors` | ADMIN | list mentors |
+| PATCH | `/users/mentors/:id/active` | ADMIN | `{ isActive }` activate / deactivate |
 
 Response shape: `{ success, message, meta?, data }`.
 Error shape: `{ success: false, message, errorSources: [{ path, message }] }`.
@@ -141,6 +144,8 @@ Every form shows field-level server errors (duplicate, rate limit).
 - [ ] `PATCH /projects/:id/review`
 - [ ] `GET /projects/stats`
 - [ ] Admin-only mentor create / list (`/users/mentors`)
+- [ ] `isActive` toggle for mentors
+- [ ] Login refuses inactive users
 - [ ] Security basics: helmet, cors, body size limit, auth rate limiter
 
 ### Phase 2: Backend verification

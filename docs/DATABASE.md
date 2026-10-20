@@ -16,6 +16,7 @@ erDiagram
         string email UK
         string password
         Role role
+        boolean isActive
         datetime createdAt
         datetime updatedAt
     }
@@ -60,6 +61,7 @@ Table name: `users`
 | `email` | `String` | yes | **UNIQUE** | stored lowercase and trimmed |
 | `password` | `String` | yes | | bcrypt hash only, never returned by the API |
 | `role` | `Role` | yes | default `STUDENT` | |
+| `isActive` | `Boolean` | yes | default `true` | `false` means deactivated: login is refused and existing tokens are rejected by the auth middleware (403) |
 | `createdAt` | `DateTime` | yes | default `now()` | |
 | `updatedAt` | `DateTime` | yes | `@updatedAt` | |
 
@@ -141,6 +143,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(STUDENT)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -184,7 +187,7 @@ model Project {
 | Stats | `groupBy status` with `_count` | `(status, createdAt)` |
 | Student list | `where studentId = ? order by createdAt desc` | `(studentId, createdAt)` |
 | Duplicate check | `where repoKey = ? or liveKey = ?` | the two unique indexes |
-| Login | `where email = ?` | unique `email` |
+| Login | `where email = ?` and `isActive = true` | unique `email` |
 
 ## 7. Seed data
 
@@ -197,6 +200,6 @@ model Project {
 ## 8. Design notes
 - `repoUrl`/`liveUrl` keep the original value for display; `repoKey`/`liveKey` exist only for uniqueness. This avoids showing the student a mangled URL.
 - Duplicates are unique across all students on purpose: one repo equals one submission.
-- Student rows use `onDelete: Restrict` so a student with submissions cannot be deleted by accident. There is no delete-user feature right now.
+- Student rows use `onDelete: Restrict` so a student with submissions cannot be deleted by accident. There is no delete feature right now.
 - A re-review overwrites `status`, `reviewNote`, `reviewedAt` and `reviewerId`. There is no history table; add a `ProjectReview` log table later if an audit trail is needed.
 - Not in scope: refresh tokens, email verification, password reset tokens, soft delete.
