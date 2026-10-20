@@ -22,6 +22,9 @@ export const corsOptions = {
   origin: config.client_origins,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  // Browsers hide most response headers from cross-origin pages. The client needs
+  // Retry-After to show "try again in N seconds" on a 429.
+  exposedHeaders: ["Retry-After"],
   credentials: true,
 };
 

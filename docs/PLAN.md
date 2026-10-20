@@ -23,7 +23,7 @@ Source requirements: [REQUIREMENTS.md](REQUIREMENTS.md)
 | Review access | MENTOR and ADMIN can review; only ADMIN manages mentors | Admin is a superset of mentor |
 | Account state | `isActive` boolean on `User` (false = deactivated, cannot log in) | Simple boolean instead of a status enum |
 | Token | JWT in an httpOnly cookie, also accepted as `Authorization: Bearer` | XSS-safe for the browser, still usable from API clients |
-| API calls | The browser calls Express directly (`NEXT_PUBLIC_API_URL`) with `credentials: "include"`; Express allows the frontend origin via CORS | Next.js stays a pure frontend, no proxy layer. Production needs `SameSite=None; Secure` on the cookie when the two apps are on different domains |
+| API calls | The browser calls `/api/*` on the Next.js origin and `rewrites` in `next.config.ts` forwards it to Express (a plain forward, no backend code in Next.js). The login cookie therefore belongs to the Next.js origin, so `proxy.ts` can read it on every page, in every deployment | No CORS and no cross-site cookie problems. Needs `TRUST_PROXY=1` on Express so per-IP rate limits see the real client IP |
 | Duplicate definition | Same normalized **repo URL** or same normalized **live URL** (any student) | One repo = one submission |
 | Normalization | lowercase host, drop `www.`, `.git`, trailing slash, query, hash | `GitHub.com/A/B/` equals `github.com/a/b` |
 | Duplicate enforcement | App-level check for a friendly message + DB `UNIQUE` on normalized columns | Handles race conditions |
@@ -122,7 +122,7 @@ server/
 Libraries: Redux Toolkit + RTK Query (server data and cache), react-hook-form + zod, sonner toasts.
 ShadCN components: button, input, textarea, label, card, table, badge, tabs, dialog, select, skeleton, sonner.
 Filter and page live in the URL query string (refresh and share safe).
-Route guards: `AuthProvider` calls `/auth/me`; wrong role is redirected.
+Route guards: `src/proxy.ts` (Next.js 16 name for middleware) verifies the cookie's JWT with `jose` and redirects before the page renders; `AuthProvider` calls `/auth/me` for the user's name / role in the UI.
 Every form shows field-level server errors (duplicate, rate limit).
 
 ## 7. Todo
@@ -153,8 +153,8 @@ Every form shows field-level server errors (duplicate, rate limit).
 - [x] curl checks: signup/login, role denial (student on admin routes), validation errors, duplicate (same URL, different casing), rate limit 429, filter, pagination, stats, review
 
 ### Phase 3: Frontend
-- [ ] Scaffold Next.js, Tailwind, ShadCN, `NEXT_PUBLIC_API_URL` env
-- [ ] API client, AuthProvider, route guards
+- [x] Scaffold Next.js, Tailwind, ShadCN, `/api` rewrite + env (`API_URL`, `JWT_SECRET`)
+- [ ] RTK Query store, `AuthProvider`, `proxy.ts` route guard
 - [ ] Login and signup pages
 - [ ] Student page: form, "My submissions"
 - [ ] Review page: stats, tabs, search, table, pagination, approve / reject dialog

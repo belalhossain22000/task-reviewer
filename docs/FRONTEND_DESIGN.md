@@ -51,7 +51,7 @@ All colours live in `src/app/globals.css` as CSS variables; components only use 
 
 The navbar shows a "Mentors" link only to admins.
 
-Guard: `AuthProvider` fetches `/auth/me` once, exposes `{ user, isLoading }`. While loading, show a full-page skeleton (no flash of the wrong page).
+Guard: `src/proxy.ts` (the Next.js 16 name for middleware) runs before a page renders: it verifies the login cookie's JWT (`jose`, `JWT_SECRET`) and redirects: no valid token goes to `/login`, a logged-in visitor on `/login` or `/signup` goes to their home, and the wrong role goes to its own home (student `/student`, mentor and admin `/review`). `AuthProvider` fetches `/auth/me` once and exposes `{ user, role, isLoading, loadError }` for the UI (name, role badge). While loading, show a full-page skeleton (no flash of the wrong page). If the token is valid but the API says otherwise (account deactivated, role changed), `/auth/me` fails and the layout sends the user to `/login`.
 
 ## 4. Shared layout (app shell)
 
@@ -190,7 +190,7 @@ Empty states:
 | --- | --- |
 | `AppShell` / `Navbar` | layout, user menu, theme toggle |
 | `AuthProvider`, `useAuth` | current user, login / logout / signup helpers |
-| `RoleGuard` | redirects by role and auth state |
+| `proxy.ts` | route guard that runs on the server before the page renders (replaces a client-side `RoleGuard`) |
 | `LoginForm`, `SignupForm` | auth forms |
 | `PasswordInput` | show/hide toggle |
 | `ProjectForm` | student submission form |
@@ -208,14 +208,14 @@ Empty states:
 
 | Concern | Approach |
 | --- | --- |
-| Server data | RTK Query: one `baseApi` (base URL from `NEXT_PUBLIC_API_URL`, `credentials: "include"`); each feature adds endpoints with `injectEndpoints`. Generated hooks: `useMeQuery`, `useGetProjectsQuery`, `useGetMyProjectsQuery`, `useGetStatsQuery`, `useGetMentorsQuery` |
+| Server data | RTK Query: one `baseApi` (base URL `/api`, same origin; `next.config.ts` forwards it to Express); each feature adds endpoints with `injectEndpoints`. Generated hooks: `useGetMeQuery`, `useGetProjectsQuery`, `useGetMyProjectsQuery`, `useGetProjectStatsQuery`, `useGetMentorsQuery` |
 | Mutations / cache | Tags: `Me`, `Project`, `MyProject`, `Stats`, `Mentor`. Submit invalidates `MyProject`; review invalidates `Project` and `Stats`; mentor create / toggle invalidates `Mentor`; login / signup invalidate `Me`; logout resets the whole API state |
 | Redux store | Created per request (`makeStore`) and provided by `StoreProvider`; typed `useAppDispatch` / `useAppSelector`. Only RTK Query state lives in it; filters and pagination stay in the URL |
 | Filter state | URL search params (single source of truth) |
 | Forms | react-hook-form + zod resolver |
-| HTTP | thin `api.ts` wrapper around `fetch` with `credentials: "include"`; throws a typed `ApiError` carrying `status`, `message`, `errorSources`, `retryAfter` |
-| Auth transport | httpOnly cookie set by Express. The browser calls Express directly at `NEXT_PUBLIC_API_URL` with `credentials: "include"`; CORS on Express allows the frontend origin. Because that cookie belongs to the API's domain, route guards are client-side (`/auth/me`), not Next middleware |
-| Global 401 | clear cached user, redirect to `/login` with a "session expired" toast |
+| HTTP | RTK Query `fetchBaseQuery` wrapped so every failure becomes an `ApiError` with `status`, `message`, `errorSources`, `retryAfter` |
+| Auth transport | httpOnly cookie set by Express. The browser only talks to the Next.js origin (`/api/*` is forwarded to Express), so the cookie belongs to that origin and `proxy.ts` can read it. No CORS needed; Express runs with `TRUST_PROXY=1` |
+| Global 401 | a protected call that gets 401 marks `Me` stale; `getMe` then reports logged out and the app leaves the page |
 
 ## 8. Suggested folder structure
 
@@ -256,8 +256,8 @@ client/src/
 
 ## 10. Frontend todo (maps to PLAN.md Phase 3)
 - [ ] Scaffold Next.js + Tailwind + ShadCN; theme tokens, Inter, dark mode
-- [ ] `api.ts` (base URL from `NEXT_PUBLIC_API_URL`), typed `ApiError`
-- [ ] `StoreProvider` (Redux), `AuthProvider`, `RoleGuard`
+- [x] RTK Query `baseApi` (base URL `/api`), typed `ApiError`, feature APIs
+- [ ] `StoreProvider` (Redux), `AuthProvider`, `src/proxy.ts` route guard
 - [ ] `AppShell`, `Navbar`, theme toggle, 404 page
 - [ ] Login and signup pages
 - [ ] `StatusBadge`, `EmptyState`, `ErrorState`, skeletons
