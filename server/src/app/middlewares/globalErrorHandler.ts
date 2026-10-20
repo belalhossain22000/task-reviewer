@@ -61,6 +61,12 @@ const GlobalErrorHandler = (
     message = "An unknown error occurred while processing the request.";
     errorSources.push("Prisma Client Unknown Request Error");
   }
+  // Body larger than the express.json limit
+  else if (err?.type === "entity.too.large") {
+    statusCode = httpStatus.REQUEST_ENTITY_TOO_LARGE;
+    message = "Request body is too large.";
+    errorSources.push({ path: "", message });
+  }
   // Generic Error Handling (e.g., JavaScript Errors)
   else if (err instanceof SyntaxError) {
     statusCode = httpStatus.BAD_REQUEST;
@@ -81,10 +87,16 @@ const GlobalErrorHandler = (
     errorSources.push("Unknown Error");
   }
 
+  // Some branches above only push a label string. Give every entry the same
+  // { path, message } shape so clients can rely on it.
+  const normalizedSources = errorSources.map((source: any) =>
+    typeof source === "string" ? { path: "", message } : source
+  );
+
   res.status(statusCode).json({
     success: false,
     message,
-    errorSources,
+    errorSources: normalizedSources,
     ...(isDevelopment && { err, stack: err?.stack }),
   });
 };

@@ -7,6 +7,15 @@ import ApiError from "../../errors/ApiErrors";
 const tooManyRequests = (message: string) => (_req: any, _res: any, next: any) =>
   next(new ApiError(httpStatus.TOO_MANY_REQUESTS, message));
 
+// Cheap safety net for the whole API, per IP.
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: config.rate_limit.global_max,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  handler: tooManyRequests("Too many requests. Please slow down."),
+});
+
 // Brute-force protection: only failed logins count, a successful one doesn't.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -41,6 +50,7 @@ const submissionLimiter = rateLimit({
 });
 
 export const rateLimiters = {
+  globalLimiter,
   loginLimiter,
   signupLimiter,
   submissionLimiter,

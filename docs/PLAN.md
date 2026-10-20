@@ -128,29 +128,29 @@ Every form shows field-level server errors (duplicate, rate limit).
 ## 7. Todo
 
 ### Phase 0: Setup
-- [ ] Answer D1-D4
-- [ ] `docker-compose.yml` with Postgres on 5433
-- [ ] Clean or replace `server/` template, fresh `.env` + `.env.example`
+- [~] Answer D1-D4
+- [x] `docker-compose.yml` with Postgres on 5433
+- [x] Clean or replace `server/` template, fresh `.env` + `.env.example`
 
 ### Phase 1: Backend
-- [ ] Prisma schema, first migration, seed script (admin)
-- [ ] Config with env validation
-- [ ] Error handler, `validateRequest` (body / query / params)
-- [ ] Auth module: signup, login, logout, me, auth middleware with role guard
-- [ ] URL normalization util + Project validation schemas
-- [ ] `POST /projects` with duplicate check and rate limiter
-- [ ] `GET /projects/mine`
-- [ ] `GET /projects` (server-side filter, search, pagination, sort)
-- [ ] `PATCH /projects/:id/review`
-- [ ] `GET /projects/stats`
-- [ ] Admin-only mentor create / list (`/users/mentors`)
-- [ ] `isActive` toggle for mentors
-- [ ] Login refuses inactive users
-- [ ] Security basics: helmet, cors, body size limit, auth rate limiter
+- [x] Prisma schema, first migration, seed script (admin)
+- [x] Config with env validation
+- [x] Error handler, `validateRequest` (body / query / params)
+- [x] Auth module: signup, login, logout, me, auth middleware with role guard
+- [x] URL normalization util + Project validation schemas
+- [x] `POST /projects` with duplicate check and rate limiter
+- [x] `GET /projects/mine`
+- [x] `GET /projects` (server-side filter, search, pagination, sort)
+- [x] `PATCH /projects/:id/review`
+- [x] `GET /projects/stats`
+- [x] Admin-only mentor create / list (`/users/mentors`)
+- [x] `isActive` toggle for mentors
+- [x] Login refuses inactive users
+- [x] Security basics: helmet, cors, body size limit, auth rate limiter
 
 ### Phase 2: Backend verification
-- [ ] `tsc` build passes
-- [ ] curl checks: signup/login, role denial (student on admin routes), validation errors, duplicate (same URL, different casing), rate limit 429, filter, pagination, stats, review
+- [x] `tsc` build passes
+- [x] curl checks: signup/login, role denial (student on admin routes), validation errors, duplicate (same URL, different casing), rate limit 429, filter, pagination, stats, review
 
 ### Phase 3: Frontend
 - [ ] Scaffold Next.js, Tailwind, ShadCN, API proxy rewrite
