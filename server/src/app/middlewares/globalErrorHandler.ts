@@ -33,7 +33,7 @@ const GlobalErrorHandler = (
   else if (err instanceof ApiError) {
     statusCode = err.statusCode;
     message = err.message;
-    errorSources = [{ type: "ApiError", details: err.message }];
+    errorSources = err.errorSources ?? [{ path: "", message: err.message }];
   }
   // handle prisma client validation errors
   else if (err instanceof Prisma.PrismaClientValidationError) {
