@@ -5,7 +5,8 @@ const validateRequest =
   (schema: AnyZodObject) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await schema.parseAsync(req.body);
+      // Keep the parsed result: it carries the zod transforms (trim, lowercase, defaults).
+      req.body = await schema.parseAsync(req.body);
       return next();
     } catch (err) {
       next(err);

@@ -5,13 +5,11 @@ import { ZodError } from "zod";
 import handleZodError from "../../errors/handleZodError";
 import parsePrismaValidationError from "../../errors/parsePrismaValidationError";
 import ApiError from "../../errors/ApiErrors";
+import config from "../../config";
 
-// TODO Replace `config.NODE_ENV` with your actual environment configuration
-
-// TODO
-const config = {
-  NODE_ENV: process.env.NODE_ENV || "development",
-};
+// Error internals (`err`, `stack`) are only sent when NODE_ENV is explicitly "development".
+// If it is unset or anything else, they stay hidden.
+const isDevelopment = config.env === "development";
 
 const GlobalErrorHandler = (
   err: any,
@@ -87,8 +85,7 @@ const GlobalErrorHandler = (
     success: false,
     message,
     errorSources,
-    err,
-    stack: config.NODE_ENV === "development" ? err?.stack : null,
+    ...(isDevelopment && { err, stack: err?.stack }),
   });
 };
 

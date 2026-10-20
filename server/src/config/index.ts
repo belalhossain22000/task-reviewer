@@ -3,6 +3,10 @@ import path from 'path';
 
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
+if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not set in .env');
+}
+
 export default {
     env: process.env.NODE_ENV,
     port: process.env.PORT,
@@ -10,6 +14,6 @@ export default {
     auth_cookie_name: 'token',
     jwt: {
         jwt_secret: process.env.JWT_SECRET,
-        expires_in: process.env.EXPIRES_IN,
+        expires_in: process.env.EXPIRES_IN || '7d',
     },
 }
