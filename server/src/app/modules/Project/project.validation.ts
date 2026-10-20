@@ -37,7 +37,54 @@ const paginationQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10),
 });
 
+// Mentor / admin list. `status=ALL` (or no status) means no status filter.
+const listProjectsQuerySchema = paginationQuerySchema.extend({
+  status: z
+    .enum(["ALL", "PENDING", "APPROVED", "REJECTED"])
+    .optional()
+    .transform((value) => (value === "ALL" ? undefined : value)),
+  search: z
+    .string()
+    .trim()
+    .max(100, "Search text is too long")
+    .optional()
+    .transform((value) => value || undefined),
+  sortBy: z.enum(["createdAt", "name", "status"]).default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+});
+
+const projectIdParamSchema = z.object({
+  id: z.string().uuid("Invalid project id"),
+});
+
+const reviewProjectSchema = z
+  .object({
+    status: z.enum(["APPROVED", "REJECTED"], {
+      errorMap: () => ({ message: "Status must be APPROVED or REJECTED" }),
+    }),
+    note: z
+      .string()
+      .trim()
+      .max(500, "Note must be at most 500 characters")
+      .optional()
+      .transform((value) => value || undefined),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    // A rejection has to tell the student why.
+    if (value.status === "REJECTED" && (value.note?.length ?? 0) < 5) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["note"],
+        message: "Please give a reason of at least 5 characters when rejecting",
+      });
+    }
+  });
+
 export const ProjectValidation = {
   createProjectSchema,
   paginationQuerySchema,
+  listProjectsQuerySchema,
+  projectIdParamSchema,
+  reviewProjectSchema,
 };

@@ -34,3 +34,28 @@ export interface IPaginatedResult<T> {
   };
   data: T[];
 }
+
+// Mentor / admin view: the same project plus who submitted and who reviewed it.
+export interface IReviewableProject extends IProject {
+  student: { id: string; name: string; email: string };
+  reviewer: { id: string; name: string } | null;
+}
+
+export interface IProjectListQuery extends IPaginationQuery {
+  status?: ProjectStatus;
+  search?: string;
+  sortBy: "createdAt" | "name" | "status";
+  sortOrder: "asc" | "desc";
+}
+
+export interface IReviewPayload {
+  status: "APPROVED" | "REJECTED";
+  note?: string;
+}
+
+export interface IProjectStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}

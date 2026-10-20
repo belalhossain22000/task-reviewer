@@ -9,6 +9,7 @@ import { ProjectValidation } from "./project.validation";
 
 const router = express.Router();
 
+// Student
 router.post(
   "/",
   auth(Role.STUDENT),
@@ -18,5 +19,25 @@ router.post(
 );
 
 router.get("/mine", auth(Role.STUDENT), ProjectController.getMyProjects);
+
+// Mentor and admin
+router.get(
+  "/",
+  auth(Role.MENTOR, Role.ADMIN),
+  ProjectController.getAllProjects
+);
+
+router.get(
+  "/stats",
+  auth(Role.MENTOR, Role.ADMIN),
+  ProjectController.getStats
+);
+
+router.patch(
+  "/:id/review",
+  auth(Role.MENTOR, Role.ADMIN),
+  validateRequest(ProjectValidation.reviewProjectSchema),
+  ProjectController.reviewProject
+);
 
 export const ProjectRoutes = router;

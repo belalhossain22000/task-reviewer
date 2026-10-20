@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, ProjectStatus } from "@prisma/client";
 import httpStatus from "http-status";
 
 import ApiError, { ErrorSource } from "../../../errors/ApiErrors";
@@ -9,6 +9,10 @@ import {
   IPaginatedResult,
   IPaginationQuery,
   IProject,
+  IProjectListQuery,
+  IProjectStats,
+  IReviewableProject,
+  IReviewPayload,
 } from "./project.interface";
 import { normalizeLiveUrl, normalizeRepoUrl } from "./project.utils";
 
@@ -114,7 +118,97 @@ const getMyProjects = async (
   };
 };
 
+const reviewableSelect = {
+  ...projectSelect,
+  student: { select: { id: true, name: true, email: true } },
+  reviewer: { select: { id: true, name: true } },
+} satisfies Prisma.ProjectSelect;
+
+const getAllProjects = async (
+  query: IProjectListQuery
+): Promise<IPaginatedResult<IReviewableProject>> => {
+  const { page, limit, status, search, sortBy, sortOrder } = query;
+  const { skip } = paginationHelper.calculatePagination({ page, limit });
+
+  // `contains` is a SQL LIKE under the hood, so `%` and `_` in what the mentor typed
+  // would act as wildcards. Escape them to search for the literal characters.
+  const text = search?.replace(/[\\%_]/g, "\\$&");
+
+  const where: Prisma.ProjectWhereInput = {
+    ...(status && { status }),
+    ...(text && {
+      OR: [
+        { name: { contains: text, mode: "insensitive" } },
+        { repoUrl: { contains: text, mode: "insensitive" } },
+        { student: { name: { contains: text, mode: "insensitive" } } },
+        { student: { email: { contains: text, mode: "insensitive" } } },
+      ],
+    }),
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.project.findMany({
+      where,
+      select: reviewableSelect,
+      // `id` as a tie-breaker keeps pages stable when many rows share the sort value.
+      orderBy: [{ [sortBy]: sortOrder }, { id: "asc" }],
+      skip,
+      take: limit,
+    }),
+    prisma.project.count({ where }),
+  ]);
+
+  return {
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    data,
+  };
+};
+
+const reviewProject = async (
+  projectId: string,
+  reviewerId: string,
+  payload: IReviewPayload
+): Promise<IReviewableProject> => {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true },
+  });
+  if (!project) throw new ApiError(httpStatus.NOT_FOUND, "Project not found");
+
+  // A decision can be changed later; the latest one overwrites status, note and reviewer.
+  return prisma.project.update({
+    where: { id: projectId },
+    data: {
+      status: payload.status,
+      reviewNote: payload.note ?? null,
+      reviewedAt: new Date(),
+      reviewerId,
+    },
+    select: reviewableSelect,
+  });
+};
+
+// Counts are global: they ignore the list's filter and search.
+const getStats = async (): Promise<IProjectStats> => {
+  const groups = await prisma.project.groupBy({
+    by: ["status"],
+    _count: { _all: true },
+  });
+
+  const count = (status: ProjectStatus) =>
+    groups.find((group) => group.status === status)?._count._all ?? 0;
+
+  const pending = count(ProjectStatus.PENDING);
+  const approved = count(ProjectStatus.APPROVED);
+  const rejected = count(ProjectStatus.REJECTED);
+
+  return { total: pending + approved + rejected, pending, approved, rejected };
+};
+
 export const ProjectService = {
   createProject,
   getMyProjects,
+  getAllProjects,
+  reviewProject,
+  getStats,
 };

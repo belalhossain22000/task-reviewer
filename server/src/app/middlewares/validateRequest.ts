@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { AnyZodObject } from "zod";
+import { ZodTypeAny } from "zod";
 
+// Accepts any zod schema, including ones with `.refine` / `.superRefine`.
 const validateRequest =
-  (schema: AnyZodObject) =>
+  (schema: ZodTypeAny) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Keep the parsed result: it carries the zod transforms (trim, lowercase, defaults).

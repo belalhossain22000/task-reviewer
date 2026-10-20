@@ -38,7 +38,12 @@ const createToken = (payload: ITokenPayload) =>
   );
 
 const emailTaken = () =>
-  new ApiError(httpStatus.CONFLICT, "An account with this email already exists");
+  new ApiError(
+    httpStatus.CONFLICT,
+    "An account with this email already exists",
+    "",
+    [{ path: "email", message: "An account with this email already exists" }]
+  );
 
 const signup = async (payload: ISignupPayload): Promise<IAuthResult> => {
   const existing = await prisma.user.findUnique({

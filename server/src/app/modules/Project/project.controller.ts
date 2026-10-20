@@ -29,7 +29,46 @@ const getMyProjects = catchAsync(async (req, res) => {
   });
 });
 
+const getAllProjects = catchAsync(async (req, res) => {
+  const query = ProjectValidation.listProjectsQuerySchema.parse(req.query);
+  const result = await ProjectService.getAllProjects(query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Projects retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const reviewProject = catchAsync(async (req, res) => {
+  const { id } = ProjectValidation.projectIdParamSchema.parse(req.params);
+  const project = await ProjectService.reviewProject(id, req.user.id, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `Project ${project.status.toLowerCase()} successfully`,
+    data: project,
+  });
+});
+
+const getStats = catchAsync(async (req, res) => {
+  const stats = await ProjectService.getStats();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Project stats retrieved successfully",
+    data: stats,
+  });
+});
+
 export const ProjectController = {
   createProject,
   getMyProjects,
+  getAllProjects,
+  reviewProject,
+  getStats,
 };

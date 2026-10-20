@@ -1,34 +1,39 @@
 import { z } from "zod";
 
-const email = z
+// Shared with the mentor module, so every account follows the same rules.
+export const nameField = z
+  .string({ required_error: "Name is required" })
+  .trim()
+  .min(2, "Name must be at least 2 characters")
+  .max(60, "Name must be at most 60 characters");
+
+export const emailField = z
   .string({ required_error: "Email is required" })
   .trim()
   .toLowerCase()
   .email("Invalid email address")
   .max(254, "Email is too long");
 
+// 72 is bcrypt's input limit.
+export const passwordField = z
+  .string({ required_error: "Password is required" })
+  .min(8, "Password must be at least 8 characters")
+  .max(72, "Password must be at most 72 characters")
+  .regex(/[A-Za-z]/, "Password must contain at least one letter")
+  .regex(/\d/, "Password must contain at least one number");
+
 const signupSchema = z
   .object({
-    name: z
-      .string({ required_error: "Name is required" })
-      .trim()
-      .min(2, "Name must be at least 2 characters")
-      .max(60, "Name must be at most 60 characters"),
-    email,
-    // 72 is bcrypt's input limit.
-    password: z
-      .string({ required_error: "Password is required" })
-      .min(8, "Password must be at least 8 characters")
-      .max(72, "Password must be at most 72 characters")
-      .regex(/[A-Za-z]/, "Password must contain at least one letter")
-      .regex(/\d/, "Password must contain at least one number"),
+    name: nameField,
+    email: emailField,
+    password: passwordField,
   })
   // strict: a body carrying `role` (or anything else unexpected) is rejected.
   .strict();
 
 const loginSchema = z
   .object({
-    email,
+    email: emailField,
     password: z
       .string({ required_error: "Password is required" })
       .min(1, "Password is required")
