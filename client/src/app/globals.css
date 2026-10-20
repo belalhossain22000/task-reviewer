@@ -1,26 +1,139 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * THEME
+ *
+ * 1. PALETTE   the colours we actually choose. Light in :root, dark in .dark.
+ *              To re-colour the app, change values here and nowhere else.
+ * 2. DERIVED   tokens that ShadCN components expect by name, built from the palette.
+ *              Written once: they follow whichever mode is active.
+ * 3. TAILWIND  maps the tokens to classes (bg-primary, text-muted-foreground, ...).
+ *
+ * Components never hard-code a colour; they only use these classes.
+ */
+
+/* 1. PALETTE: light */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+
+  /* Brand */
+  --primary: oklch(0.511 0.262 276.966);
+  --primary-foreground: oklch(0.985 0 0);
+
+  /* Neutral surface: secondary buttons, hover backgrounds, muted areas */
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --border: oklch(0.922 0 0);
+
+  --destructive: oklch(0.577 0.245 27.325);
+
+  /* Project status */
+  --status-pending: oklch(0.6 0.17 52);
+  --status-approved: oklch(0.596 0.19 149);
+
+  --radius: 0.625rem;
 }
 
+/* 1. PALETTE: dark */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+
+  --primary: oklch(0.56 0.24 277);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --border: oklch(1 0 0 / 10%);
+
+  --destructive: oklch(0.704 0.191 22.216);
+
+  --status-pending: oklch(0.828 0.189 84.429);
+  --status-approved: oklch(0.723 0.219 149.579);
+}
+
+/* 2. DERIVED */
+:root {
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --muted: var(--secondary);
+  --accent: var(--secondary);
+  --accent-foreground: var(--secondary-foreground);
+  --input: var(--border);
+  --ring: var(--primary);
+
+  /* A rejected project uses the same red as an error. */
+  --status-rejected: var(--destructive);
+
+  /* Badge background = 15% of the status colour. Badge text = the status colour pulled
+     toward the page text colour, so it is dark in light mode and light in dark mode. */
+  --status-pending-soft: color-mix(in oklab, var(--status-pending) 15%, transparent);
+  --status-pending-foreground: color-mix(in oklab, var(--status-pending) 45%, var(--foreground));
+  --status-approved-soft: color-mix(in oklab, var(--status-approved) 15%, transparent);
+  --status-approved-foreground: color-mix(in oklab, var(--status-approved) 45%, var(--foreground));
+  --status-rejected-soft: color-mix(in oklab, var(--status-rejected) 15%, transparent);
+  --status-rejected-foreground: color-mix(in oklab, var(--status-rejected) 45%, var(--foreground));
+}
+
+/* 3. TAILWIND */
 @theme inline {
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-sans);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-soft: var(--status-pending-soft);
+  --color-status-pending-foreground: var(--status-pending-foreground);
+  --color-status-approved: var(--status-approved);
+  --color-status-approved-soft: var(--status-approved-soft);
+  --color-status-approved-foreground: var(--status-approved-foreground);
+  --color-status-rejected: var(--status-rejected);
+  --color-status-rejected-soft: var(--status-rejected-soft);
+  --color-status-rejected-foreground: var(--status-rejected-foreground);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

@@ -23,7 +23,7 @@ Source requirements: [REQUIREMENTS.md](REQUIREMENTS.md)
 | Review access | MENTOR and ADMIN can review; only ADMIN manages mentors | Admin is a superset of mentor |
 | Account state | `isActive` boolean on `User` (false = deactivated, cannot log in) | Simple boolean instead of a status enum |
 | Token | JWT in an httpOnly cookie, also accepted as `Authorization: Bearer` | XSS-safe for the browser, still usable from API clients |
-| Same-origin | Next.js rewrites `/api/*` to Express | No CORS or cross-site cookie problems in any deployment |
+| API calls | The browser calls Express directly (`NEXT_PUBLIC_API_URL`) with `credentials: "include"`; Express allows the frontend origin via CORS | Next.js stays a pure frontend, no proxy layer. Production needs `SameSite=None; Secure` on the cookie when the two apps are on different domains |
 | Duplicate definition | Same normalized **repo URL** or same normalized **live URL** (any student) | One repo = one submission |
 | Normalization | lowercase host, drop `www.`, `.git`, trailing slash, query, hash | `GitHub.com/A/B/` equals `github.com/a/b` |
 | Duplicate enforcement | App-level check for a friendly message + DB `UNIQUE` on normalized columns | Handles race conditions |
@@ -119,7 +119,7 @@ server/
 | `/review` | MENTOR, ADMIN | stat cards, status tabs, search, paginated table, approve / reject dialog |
 | `/admin/mentors` | ADMIN | mentor list + "Add mentor" form |
 
-Libraries: react-hook-form + zod, TanStack Query, sonner toasts.
+Libraries: Redux Toolkit + RTK Query (server data and cache), react-hook-form + zod, sonner toasts.
 ShadCN components: button, input, textarea, label, card, table, badge, tabs, dialog, select, skeleton, sonner.
 Filter and page live in the URL query string (refresh and share safe).
 Route guards: `AuthProvider` calls `/auth/me`; wrong role is redirected.
@@ -153,7 +153,7 @@ Every form shows field-level server errors (duplicate, rate limit).
 - [x] curl checks: signup/login, role denial (student on admin routes), validation errors, duplicate (same URL, different casing), rate limit 429, filter, pagination, stats, review
 
 ### Phase 3: Frontend
-- [ ] Scaffold Next.js, Tailwind, ShadCN, API proxy rewrite
+- [ ] Scaffold Next.js, Tailwind, ShadCN, `NEXT_PUBLIC_API_URL` env
 - [ ] API client, AuthProvider, route guards
 - [ ] Login and signup pages
 - [ ] Student page: form, "My submissions"

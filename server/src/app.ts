@@ -13,7 +13,7 @@ import router from "./app/routes";
 
 const app: Application = express();
 
-// Behind the Next.js proxy / a reverse proxy every request arrives from that proxy's IP.
+// Behind a reverse proxy (or a hosting platform's load balancer) every request arrives from that proxy's IP.
 // TRUST_PROXY=<number of proxies in front> makes req.ip the real client IP, which the
 // per-IP rate limiters depend on. Leave it at 0 when clients connect directly.
 app.set("trust proxy", config.trust_proxy);

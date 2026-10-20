@@ -13,13 +13,21 @@ Related: [PLAN.md](PLAN.md), [DATABASE.md](DATABASE.md)
 
 | Aspect | Choice |
 | --- | --- |
-| Components | ShadCN, `new-york` style, neutral base color |
+| Components | ShadCN (Radix), `vega` preset, neutral base color |
 | Accent | One brand color (indigo) for primary buttons, active tab, focus ring |
 | Font | Inter via `next/font` |
 | Theme | Light and dark (system default, manual toggle in the navbar) |
-| Radius / spacing | ShadCN defaults (`0.5rem`), 4px spacing scale |
+| Radius / spacing | `0.625rem` radius (ShadCN default), 4px spacing scale |
 | Icons | `lucide-react` |
 | Toasts | `sonner` |
+
+### Colour tokens
+
+All colours live in `src/app/globals.css` as CSS variables; components only use Tailwind classes built from them (`bg-primary`, `text-muted-foreground`, `bg-status-approved-soft`). No hex values and no raw palette classes (`bg-indigo-500`) in components.
+
+- Palette (chosen by us): background, foreground, card, primary (indigo), secondary (neutral grey), muted-foreground, border, destructive, status-pending, status-approved. Light and dark each define these.
+- Everything else ShadCN expects (popover, muted, accent, input, ring, status soft/foreground) is derived from them once.
+- There is no second brand colour; `secondary` is the neutral surface colour.
 
 ### Status colors (always icon + text, never color alone)
 
@@ -174,7 +182,7 @@ Empty states:
 ## 6. Component inventory
 
 ### ShadCN primitives
-`button`, `input`, `textarea`, `label`, `card`, `table`, `badge`, `tabs`, `dialog`, `sheet`, `select`, `skeleton`, `dropdown-menu`, `alert`, `sonner`, `form`, `pagination` (or custom), `tooltip`.
+`button`, `input`, `textarea`, `label`, `card`, `table`, `badge`, `tabs`, `dialog`, `sheet`, `select`, `skeleton`, `dropdown-menu`, `alert`, `sonner`, `field` (this ShadCN version has no `form`), `pagination`, `tooltip`, `separator`, `avatar`. The ShadCN `sidebar` is deliberately not used: the staff sidebar is a small custom `<aside>` (`bg-card border-r`, a `Sheet` on mobile).
 
 ### App components
 
@@ -200,12 +208,13 @@ Empty states:
 
 | Concern | Approach |
 | --- | --- |
-| Server data | TanStack Query: `["me"]`, `["projects", filters]`, `["projects","mine"]`, `["stats"]` |
-| Mutations | `submitProject`, `reviewProject`; on success invalidate `projects` and `stats` |
+| Server data | RTK Query: one `baseApi` (base URL from `NEXT_PUBLIC_API_URL`, `credentials: "include"`); each feature adds endpoints with `injectEndpoints`. Generated hooks: `useMeQuery`, `useGetProjectsQuery`, `useGetMyProjectsQuery`, `useGetStatsQuery`, `useGetMentorsQuery` |
+| Mutations / cache | Tags: `Me`, `Project`, `MyProject`, `Stats`, `Mentor`. Submit invalidates `MyProject`; review invalidates `Project` and `Stats`; mentor create / toggle invalidates `Mentor`; login / signup invalidate `Me`; logout resets the whole API state |
+| Redux store | Created per request (`makeStore`) and provided by `StoreProvider`; typed `useAppDispatch` / `useAppSelector`. Only RTK Query state lives in it; filters and pagination stay in the URL |
 | Filter state | URL search params (single source of truth) |
 | Forms | react-hook-form + zod resolver |
 | HTTP | thin `api.ts` wrapper around `fetch` with `credentials: "include"`; throws a typed `ApiError` carrying `status`, `message`, `errorSources`, `retryAfter` |
-| Auth transport | httpOnly cookie. Browser calls `/api/*` on the Next origin and Next rewrites to Express (no CORS issues) |
+| Auth transport | httpOnly cookie set by Express. The browser calls Express directly at `NEXT_PUBLIC_API_URL` with `credentials: "include"`; CORS on Express allows the frontend origin. Because that cookie belongs to the API's domain, route guards are client-side (`/auth/me`), not Next middleware |
 | Global 401 | clear cached user, redirect to `/login` with a "session expired" toast |
 
 ## 8. Suggested folder structure
@@ -228,9 +237,10 @@ client/src/
     student/                      ProjectForm, MyProjectsList, ProjectCard
     admin/                        StatsCards, StatusTabs, ProjectsTable, ...
     common/                       StatusBadge, EmptyState, ErrorState
-  lib/                            api.ts, query-client.ts, utils.ts, validations.ts
-  hooks/                          use-auth.ts, use-projects.ts, use-debounce.ts
-  providers/                      AuthProvider, QueryProvider, ThemeProvider
+  lib/                            utils.ts, validations.ts, store/ (store.ts, hooks.ts, base-api.ts)
+  features/                       auth/auth-api.ts, project/project-api.ts, user/user-api.ts
+  hooks/                          use-debounce.ts
+  providers/                      StoreProvider, AuthProvider, ThemeProvider
   types/                          api.ts (User, Project, Meta, ApiResponse)
 ```
 
@@ -246,8 +256,8 @@ client/src/
 
 ## 10. Frontend todo (maps to PLAN.md Phase 3)
 - [ ] Scaffold Next.js + Tailwind + ShadCN; theme tokens, Inter, dark mode
-- [ ] `api.ts`, typed `ApiError`, Next rewrite `/api/*` to Express
-- [ ] `QueryProvider`, `AuthProvider`, `RoleGuard`
+- [ ] `api.ts` (base URL from `NEXT_PUBLIC_API_URL`), typed `ApiError`
+- [ ] `StoreProvider` (Redux), `AuthProvider`, `RoleGuard`
 - [ ] `AppShell`, `Navbar`, theme toggle, 404 page
 - [ ] Login and signup pages
 - [ ] `StatusBadge`, `EmptyState`, `ErrorState`, skeletons
