@@ -6,6 +6,13 @@
 export const ROLES = ["STUDENT", "MENTOR", "ADMIN"] as const;
 export type Role = (typeof ROLES)[number];
 
+// How a role is written for people ("MENTOR" is for the code, "Mentor" for the screen).
+export const ROLE_LABELS: Record<Role, string> = {
+  STUDENT: "Student",
+  MENTOR: "Mentor",
+  ADMIN: "Admin",
+};
+
 export const PROJECT_STATUSES = ["PENDING", "APPROVED", "REJECTED"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
