@@ -155,7 +155,7 @@ export function SignupForm() {
 
       <CardFooter className="justify-center text-sm text-muted-foreground">
         Already have an account?&nbsp;
-        <Link href="/login" className="font-medium text-primary hover:underline">
+        <Link href="/login" className="font-medium text-link hover:underline">
           Log in
         </Link>
       </CardFooter>

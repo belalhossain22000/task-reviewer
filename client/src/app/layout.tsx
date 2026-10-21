@@ -35,7 +35,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <TooltipProvider>{children}</TooltipProvider>
             </AuthProvider>
           </StoreProvider>
-          <Toaster position="top-right" richColors closeButton />
+          {/* Bottom, not top: a toast at the top covers the theme button and the account menu. */}
+          <Toaster position="bottom-right" richColors closeButton />
         </ThemeProvider>
       </body>
     </html>

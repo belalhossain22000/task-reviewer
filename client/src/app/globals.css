@@ -34,6 +34,9 @@
 
   --destructive: oklch(0.577 0.245 27.325);
 
+  /* Links and other small coloured TEXT. Same indigo as primary in light mode. */
+  --link: var(--primary);
+
   /* Project status */
   --status-pending: oklch(0.6 0.17 52);
   --status-approved: oklch(0.596 0.19 149);
@@ -56,6 +59,10 @@
   --border: oklch(1 0 0 / 10%);
 
   --destructive: oklch(0.704 0.191 22.216);
+
+  /* Lighter than primary: primary is dark enough for a button behind white text, but as small
+     text on a dark page it only reaches 3.5:1. This one reaches 6:1. */
+  --link: oklch(0.68 0.16 277);
 
   --status-pending: oklch(0.828 0.189 84.429);
   --status-approved: oklch(0.723 0.219 149.579);
@@ -105,6 +112,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-link: var(--link);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

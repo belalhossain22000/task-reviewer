@@ -123,7 +123,7 @@ export function LoginForm() {
 
       <CardFooter className="justify-center text-sm text-muted-foreground">
         Don&apos;t have an account?&nbsp;
-        <Link href="/signup" className="font-medium text-primary hover:underline">
+        <Link href="/signup" className="font-medium text-link hover:underline">
           Sign up
         </Link>
       </CardFooter>
