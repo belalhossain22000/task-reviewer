@@ -163,6 +163,14 @@ and the admin is created by the seed.
   front of it, so per-IP rate limits need the forwarded client address).
 - `server/Dockerfile` builds the API; the container applies pending migrations, then starts. Run
   `db:seed` once to create the admin, and change the demo passwords.
+- **Neon (PostgreSQL):** `DATABASE_URL` is the pooled host (`-pooler`) plus `&pgbouncer=true`; `DIRECT_URL` is
+  the same database without the pooler, used only by `prisma migrate` (a pooler can't take its lock). Run
+  `npm run db:deploy` and `npm run db:seed` once against it from your machine.
+- **Vercel, two projects:** `server/` (the API) and `client/` (the Next.js app). `server/api/index.ts` and
+  `server/vercel.json` run Express as one serverless function. Deploy the API first, then give the client
+  its address as `API_URL` (`https://<api>.vercel.app/api/v1`) *before* building it. Both projects need the
+  same `JWT_SECRET`. On Vercel the API's rate limiters are per function instance (in memory), so they are
+  best-effort there.
 - Production responses never include error internals (`err`, `stack`); only `NODE_ENV=development` does.
 
 ## Limitations and what I would do next

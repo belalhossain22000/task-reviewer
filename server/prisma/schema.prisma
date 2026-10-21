@@ -4,7 +4,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
+  // Same database without a connection pooler: `prisma migrate` needs a direct connection (it takes
+  // a lock a pooler such as Neon's PgBouncer does not support). Locally both are the same URL.
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
