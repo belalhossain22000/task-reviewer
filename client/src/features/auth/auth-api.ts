@@ -1,4 +1,4 @@
-import { baseApi, invalidateOnSuccess, TAG_TYPES, unwrap } from "@/lib/store/base-api";
+import { baseApi, invalidateOnSuccess, OVERRIDE_ON_HOT_RELOAD, TAG_TYPES, unwrap } from "@/lib/store/base-api";
 import type {
   ApiResponse,
   LoginPayload,
@@ -7,6 +7,7 @@ import type {
 } from "@/types/api";
 
 export const authApi = baseApi.injectEndpoints({
+  overrideExisting: OVERRIDE_ON_HOT_RELOAD,
   endpoints: (build) => ({
     // Who is logged in? This is the single source of truth for "am I logged in".
     // A 401 here just means "nobody", and the AuthProvider treats it that way.

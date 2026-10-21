@@ -18,7 +18,11 @@ export function StudentShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
       <StudentNavbar />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+      {/* The side padding is OUTSIDE the max-width column, exactly like the navbar above, so the
+          bar and the cards share the same left and right edges. */}
+      <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto w-full max-w-6xl">{children}</div>
+      </main>
     </div>
   );
 }

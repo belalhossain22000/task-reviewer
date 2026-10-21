@@ -1,0 +1,5 @@
+# Each app has its own .gitignore (server/, client/). This one covers the root.
+node_modules
+.env
+.DS_Store
+*.log

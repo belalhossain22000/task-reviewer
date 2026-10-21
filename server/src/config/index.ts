@@ -19,6 +19,8 @@ export default {
         .filter(Boolean),
     // How many reverse proxies sit in front of the server (0 = none).
     trust_proxy: Number(process.env.TRUST_PROXY) || 0,
+    // How long "I'm reviewing this" holds a project before anyone else may take it.
+    claim_ttl_minutes: Number(process.env.CLAIM_TTL_MINUTES) || 30,
     rate_limit: {
         global_max: Number(process.env.GLOBAL_RATE_LIMIT_MAX) || 300,
         submission_max: Number(process.env.SUBMISSION_RATE_LIMIT_MAX) || 5,

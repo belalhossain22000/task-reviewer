@@ -30,8 +30,10 @@ const getMyProjects = catchAsync(async (req, res) => {
 });
 
 const getAllProjects = catchAsync(async (req, res) => {
-  const query = ProjectValidation.listProjectsQuerySchema.parse(req.query);
-  const result = await ProjectService.getAllProjects(query);
+  const { reviewer, ...query } = ProjectValidation.listProjectsQuerySchema.parse(req.query);
+  // "me" is the person asking; anything else is already a checked id.
+  const reviewerId = reviewer === "me" ? req.user.id : reviewer;
+  const result = await ProjectService.getAllProjects({ ...query, reviewerId, viewerId: req.user.id });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -44,12 +46,60 @@ const getAllProjects = catchAsync(async (req, res) => {
 
 const reviewProject = catchAsync(async (req, res) => {
   const { id } = ProjectValidation.projectIdParamSchema.parse(req.params);
-  const project = await ProjectService.reviewProject(id, req.user.id, req.body);
+  const project = await ProjectService.reviewProject(id, req.user, req.body);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: `Project ${project.status.toLowerCase()} successfully`,
+    data: project,
+  });
+});
+
+const reopenProject = catchAsync(async (req, res) => {
+  const { id } = ProjectValidation.projectIdParamSchema.parse(req.params);
+  const project = await ProjectService.reopenProject(id, req.user.id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Project moved back to pending",
+    data: project,
+  });
+});
+
+const getProjectHistory = catchAsync(async (req, res) => {
+  const { id } = ProjectValidation.projectIdParamSchema.parse(req.params);
+  const history = await ProjectService.getProjectHistory(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Project history retrieved successfully",
+    data: history,
+  });
+});
+
+const claimProject = catchAsync(async (req, res) => {
+  const { id } = ProjectValidation.projectIdParamSchema.parse(req.params);
+  const project = await ProjectService.claimProject(id, req.user.id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "You are now reviewing this project",
+    data: project,
+  });
+});
+
+const releaseProject = catchAsync(async (req, res) => {
+  const { id } = ProjectValidation.projectIdParamSchema.parse(req.params);
+  const project = await ProjectService.releaseProject(id, req.user);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Project released",
     data: project,
   });
 });
@@ -70,5 +120,9 @@ export const ProjectController = {
   getMyProjects,
   getAllProjects,
   reviewProject,
+  reopenProject,
+  getProjectHistory,
+  claimProject,
+  releaseProject,
   getStats,
 };

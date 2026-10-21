@@ -1,9 +1,11 @@
 # Implementation Plan
 
-Status: **draft, waiting for approval. No code written yet.**
+Status: **implemented.** This file is kept as the plan the build followed; the root `README.md` describes the finished project.
 Source requirements: [REQUIREMENTS.md](REQUIREMENTS.md)
 
-## 1. Open decisions (need an answer before coding)
+## 1. Decisions (all resolved)
+
+Outcome: D1 the template was cleaned in place; D2 still on the owner (the old credentials are in the git history of the earlier template, rotate them); D3 Postgres runs on 5433 via `docker-compose.yml`; D4 one repository with `client/` and `server/`.
 
 | # | Question | Recommendation |
 | --- | --- | --- |
@@ -81,10 +83,15 @@ Project
 | GET | `/projects/mine` | STUDENT | own submissions, paginated |
 | GET | `/projects` | MENTOR, ADMIN | `page, limit, status, search, sortBy, sortOrder` |
 | GET | `/projects/stats` | MENTOR, ADMIN | counts per status |
-| PATCH | `/projects/:id/review` | MENTOR, ADMIN | `{ status, note? }` |
+| PATCH | `/projects/:id/review` | MENTOR, ADMIN | `{ status, note? }`; also appends to the decision history |
+| GET | `/projects/:id/history` | MENTOR, ADMIN | every decision on a project, newest first (added after the first plan) |
+| PATCH | `/projects/:id/reopen` | ADMIN | back to `PENDING`; recorded in the history as a `PENDING` entry |
+| POST / DELETE | `/projects/:id/claim` | MENTOR, ADMIN | "I'm reviewing this": take / release a pending project (a 30 min hold: other mentors cannot decide meanwhile, an admin can; added after the first plan) |
 | POST | `/users/mentors` | ADMIN | create a mentor (name, email, initial password) |
 | GET | `/users/mentors` | ADMIN | list mentors |
 | PATCH | `/users/mentors/:id/active` | ADMIN | `{ isActive }` activate / deactivate |
+| GET | `/users/students?page&limit&search` | ADMIN | students with their project count (added after the first plan: an admin has to be able to see and manage students) |
+| PATCH | `/users/students/:id/active` | ADMIN | `{ isActive }` activate / deactivate a student |
 
 Response shape: `{ success, message, meta?, data }`.
 Error shape: `{ success: false, message, errorSources: [{ path, message }] }`.
@@ -128,7 +135,7 @@ Every form shows field-level server errors (duplicate, rate limit).
 ## 7. Todo
 
 ### Phase 0: Setup
-- [~] Answer D1-D4
+- [x] Answer D1-D4
 - [x] `docker-compose.yml` with Postgres on 5433
 - [x] Clean or replace `server/` template, fresh `.env` + `.env.example`
 
@@ -154,18 +161,18 @@ Every form shows field-level server errors (duplicate, rate limit).
 
 ### Phase 3: Frontend
 - [x] Scaffold Next.js, Tailwind, ShadCN, `/api` rewrite + env (`API_URL`, `JWT_SECRET`)
-- [ ] RTK Query store, `AuthProvider`, `proxy.ts` route guard
-- [ ] Login and signup pages
-- [ ] Student page: form, "My submissions"
-- [ ] Review page: stats, tabs, search, table, pagination, approve / reject dialog
-- [ ] Admin mentors page: list + add mentor form
-- [ ] Loading, empty and error states, responsive layout
-- [ ] `next build` and `lint` pass
+- [x] RTK Query store, `AuthProvider`, `proxy.ts` route guard
+- [x] Login and signup pages
+- [x] Student page: form, "My submissions"
+- [x] Review page: stats, tabs, search, table, pagination, approve / reject dialog
+- [x] Admin mentors page: list + add mentor form
+- [x] Loading, empty and error states, responsive layout
+- [x] `next build` and `lint` pass
 
 ### Phase 4: Wrap-up
-- [ ] Root `README.md`: setup, env vars, seed credentials, API list, decisions, trade-offs
-- [ ] End-to-end manual run of both roles
-- [ ] Reminder: make the repo **public** after the deadline
+- [x] Root `README.md`: setup, env vars, seed credentials, API list, decisions, trade-offs
+- [x] End-to-end manual run of both roles
+- [ ] Reminder: make the repo **public** after the deadline (not done yet: it is a manual step)
 
 ## 8. Known trade-offs (to mention in README)
 - Rate limiter uses an in-memory store; a multi-instance deployment needs a Redis store.

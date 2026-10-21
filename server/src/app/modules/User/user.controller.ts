@@ -41,8 +41,35 @@ const setMentorActive = catchAsync(async (req, res) => {
   });
 });
 
+const getStudents = catchAsync(async (req, res) => {
+  const query = UserValidation.listStudentsQuerySchema.parse(req.query);
+  const result = await UserService.getStudents(query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Students retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const setStudentActive = catchAsync(async (req, res) => {
+  const { id } = UserValidation.studentIdParamSchema.parse(req.params);
+  const student = await UserService.setStudentActive(id, req.body.isActive);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: student.isActive ? "Student activated" : "Student deactivated",
+    data: student,
+  });
+});
+
 export const UserController = {
   createMentor,
   getMentors,
   setMentorActive,
+  getStudents,
+  setStudentActive,
 };

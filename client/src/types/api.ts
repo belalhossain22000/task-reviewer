@@ -62,8 +62,15 @@ export interface User {
   createdAt: string;
 }
 
-// A mentor is a User whose role is MENTOR.
-export type Mentor = User;
+// A mentor as an admin sees them: the account plus how many decisions they have made.
+export interface Mentor extends User {
+  reviewCount: number;
+}
+
+// A student as an admin sees them: the account plus how many projects they have submitted.
+export interface Student extends User {
+  projectCount: number;
+}
 
 // A project as a student sees it.
 export interface Project {
@@ -82,6 +89,21 @@ export interface Project {
 export interface ReviewableProject extends Project {
   student: Pick<User, "id" | "name" | "email">;
   reviewer: Pick<User, "id" | "name"> | null;
+  // Who is reviewing it right now ("Take"). Only present while the claim is still valid; the
+  // API drops a claim that has run out.
+  claimedBy: Pick<User, "id" | "name"> | null;
+  claimedAt: string | null;
+  // When it runs out, so the UI can count down. Null when nobody holds it.
+  claimExpiresAt: string | null;
+}
+
+// One decision in a project's history (a project keeps all of them, newest first).
+export interface ReviewEntry {
+  id: string;
+  status: ProjectStatus;
+  note: string | null;
+  createdAt: string;
+  reviewer: Pick<User, "id" | "name">;
 }
 
 export interface ProjectStats {
@@ -129,12 +151,20 @@ export interface PaginationParams {
   limit?: number;
 }
 
+export interface StudentListParams extends PaginationParams {
+  search?: string;
+}
+
 export type ProjectSortBy = "createdAt" | "name" | "status";
 
 // `status: "ALL"` (or leaving it out) means no status filter.
 export interface ProjectListParams extends PaginationParams {
   status?: ProjectStatus | "ALL";
   search?: string;
+  // "me", or the id of a mentor / admin: only projects whose latest decision was theirs.
+  reviewer?: string;
+  // "mine": taken by me. "none": pending and not taken by anyone (the work queue).
+  claim?: "mine" | "none";
   sortBy?: ProjectSortBy;
   sortOrder?: "asc" | "desc";
 }

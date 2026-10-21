@@ -25,4 +25,14 @@ router.patch(
   UserController.setMentorActive
 );
 
+// Student management is admin only too: see who has signed up, switch an account off or on.
+router.get("/students", auth(Role.ADMIN), UserController.getStudents);
+
+router.patch(
+  "/students/:id/active",
+  auth(Role.ADMIN),
+  validateRequest(UserValidation.setActiveSchema),
+  UserController.setStudentActive
+);
+
 export const UserRoutes = router;

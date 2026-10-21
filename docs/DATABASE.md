@@ -203,3 +203,48 @@ model Project {
 - Student rows use `onDelete: Restrict` so a student with submissions cannot be deleted by accident. There is no delete feature right now.
 - A re-review overwrites `status`, `reviewNote`, `reviewedAt` and `reviewerId`. There is no history table; add a `ProjectReview` log table later if an audit trail is needed.
 - Not in scope: refresh tokens, email verification, password reset tokens, soft delete.
+
+
+## 10. Review history (added after the first design)
+
+The `Project` row only holds the **latest** decision (`status`, `reviewNote`, `reviewedAt`, `reviewerId`),
+which is what the lists need. To answer "who decided what, and what did it replace?", every decision is also
+written to its own table.
+
+```
+ProjectReview   (table: project_reviews)
+  id uuid PK, projectId -> Project (cascade), reviewerId -> User (restrict),
+  status (APPROVED | REJECTED), note?, createdAt
+  indexes: (projectId, createdAt), (reviewerId, createdAt)
+```
+
+- One row per approve / reject. Changing a decision adds a row; nothing is edited or deleted.
+- The project update and the new row are written in **one transaction**: they are both saved or neither is.
+  Invariant: for a decided project, the newest history row equals the project's `status`, `reviewNote` and
+  `reviewerId`.
+- A mentor's "reviews" count is the number of rows with their `reviewerId`.
+- The migration copies each existing decision into the history, so projects decided before this table existed
+  have a first entry.
+- An admin can **reopen** a decided project. The project row goes back to `PENDING` with its decision fields
+  cleared, and a history row with `status = PENDING` (reviewer = the admin) is added in the same transaction.
+  So the invariant is: the newest history row equals the project's `status`, and, while it is decided, its
+  `reviewNote` and `reviewerId`. A `PENDING` row is not a review: it is left out of a mentor's "reviews" count.
+- Not recorded on purpose: which mentor merely *opened* a project, and any assignment of projects to mentors.
+
+
+## 11. "I'm reviewing this" (added after the first design)
+
+Two nullable columns on `projects`: `claimedById -> users` (on delete: set null) and `claimedAt`, plus an
+index on `claimedById`.
+
+- It is a hold that stops other **mentors** from deciding the project (an admin may override). It counts only while
+  `claimedAt > now - CLAIM_TTL_MINUTES` (default 30). An expired claim is ignored when reading, so no
+  cleanup job is needed, and the API never returns it.
+- Taking is a single conditional `UPDATE ... WHERE status = 'PENDING' AND (claimedById IS NULL OR
+  claimedById = me OR claimedAt < cutoff)`; zero rows updated means someone else holds it. The database
+  therefore decides a race between two people, not the application.
+- Making a decision clears both columns in the same transaction as the decision. For a mentor the decision
+  is the same kind of conditional `UPDATE` (`claimedById IS NULL OR = me OR claimedAt < cutoff`), so a hold
+  taken a moment earlier cannot be overwritten.
+- The "work queue" filter (`claim=none`) is: pending AND (never taken OR the claim expired).
+- Only staff can see claims; the student-facing queries do not select these columns.

@@ -48,7 +48,7 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, ApiError> = async (
   return { error };
 };
 
-export const TAG_TYPES = ["Me", "Project", "MyProject", "Stats", "Mentor"] as const;
+export const TAG_TYPES = ["Me", "Project", "MyProject", "Stats", "Mentor", "Student", "History"] as const;
 
 export const baseApi = createApi({
   reducerPath: "api",
@@ -65,6 +65,11 @@ export const baseApi = createApi({
 });
 
 /* ---------- Helpers shared by the feature APIs ---------- */
+
+// While developing, saving a feature's *-api.ts file re-runs it, but `baseApi` stays in memory, so
+// injectEndpoints would be called a second time for the same endpoints and RTK Query throws.
+// Allowing the override in development fixes that; in production a module runs once.
+export const OVERRIDE_ON_HOT_RELOAD = process.env.NODE_ENV === "development";
 
 // RTK Query runs `invalidatesTags` even when the mutation FAILED. Without this, a form
 // rejected with 400 / 409 / 429 would still make every list refetch for nothing.

@@ -29,8 +29,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  projects         Project[] @relation("ProjectStudent")
-  reviewedProjects Project[] @relation("ProjectReviewer")
+  projects         Project[]       @relation("ProjectStudent")
+  reviewedProjects Project[]       @relation("ProjectReviewer")
+  // Every decision this person has made, not only the latest one on each project.
+  authoredReviews  ProjectReview[] @relation("ReviewAuthor")
+  // Pending projects this person has taken ("I'm reviewing this").
+  claimedProjects  Project[]       @relation("ProjectClaimer")
 
   @@map("users")
 }
@@ -54,7 +58,36 @@ model Project {
   reviewerId String?
   reviewer   User?   @relation("ProjectReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
 
+  // "I'm reviewing this": a soft claim a mentor puts on a PENDING project so two people don't work
+  // on it at once. It counts only for CLAIM_TTL_MINUTES after `claimedAt`, and is cleared when the
+  // project is decided or released.
+  claimedById String?
+  claimedBy   User?     @relation("ProjectClaimer", fields: [claimedById], references: [id], onDelete: SetNull)
+  claimedAt   DateTime?
+
+  reviews ProjectReview[]
+
+  @@index([claimedById])
   @@index([status, createdAt])
   @@index([studentId, createdAt])
   @@map("projects")
+}
+
+// One row per decision. `Project.status / reviewNote / reviewerId` only hold the LATEST decision
+// (that is what the lists show); this table keeps all of them, so a project that was rejected by
+// one mentor and approved later by another still shows who decided what and when.
+// A PENDING row means an admin reopened the project (it went back to the queue).
+model ProjectReview {
+  id         String        @id @default(uuid())
+  projectId  String
+  project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer   User          @relation("ReviewAuthor", fields: [reviewerId], references: [id], onDelete: Restrict)
+  status     ProjectStatus
+  note       String?
+  createdAt  DateTime      @default(now())
+
+  @@index([projectId, createdAt])
+  @@index([reviewerId, createdAt])
+  @@map("project_reviews")
 }

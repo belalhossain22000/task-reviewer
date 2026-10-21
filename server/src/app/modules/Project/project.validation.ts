@@ -49,6 +49,17 @@ const listProjectsQuerySchema = paginationQuerySchema.extend({
     .max(100, "Search text is too long")
     .optional()
     .transform((value) => value || undefined),
+  // "me" = the person asking; or the id of a mentor / admin. Left out = anyone.
+  reviewer: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined)
+    .refine((value) => value === undefined || value === "me" || z.string().uuid().safeParse(value).success, {
+      message: "Invalid reviewer",
+    }),
+  // "mine" = projects I have taken; "none" = pending projects nobody has taken. Left out = all.
+  claim: z.enum(["mine", "none"]).optional(),
   sortBy: z.enum(["createdAt", "name", "status"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });

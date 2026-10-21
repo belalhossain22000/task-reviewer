@@ -39,11 +39,21 @@ export interface IPaginatedResult<T> {
 export interface IReviewableProject extends IProject {
   student: { id: string; name: string; email: string };
   reviewer: { id: string; name: string } | null;
+  // Who is currently reviewing it. Only set while the claim is still valid (see CLAIM_TTL_MINUTES).
+  claimedBy: { id: string; name: string } | null;
+  claimedAt: Date | null;
+  // When the claim runs out (claimedAt + CLAIM_TTL_MINUTES); null when there is no valid claim.
+  claimExpiresAt: Date | null;
 }
 
 export interface IProjectListQuery extends IPaginationQuery {
   status?: ProjectStatus;
   search?: string;
+  // Only projects whose latest decision was made by this person.
+  reviewerId?: string;
+  // "mine" = taken by `viewerId`; "none" = pending and not taken by anyone.
+  claim?: "mine" | "none";
+  viewerId?: string;
   sortBy: "createdAt" | "name" | "status";
   sortOrder: "asc" | "desc";
 }
@@ -51,6 +61,15 @@ export interface IProjectListQuery extends IPaginationQuery {
 export interface IReviewPayload {
   status: "APPROVED" | "REJECTED";
   note?: string;
+}
+
+// One decision in a project's history.
+export interface IReviewEntry {
+  id: string;
+  status: ProjectStatus;
+  note: string | null;
+  createdAt: Date;
+  reviewer: { id: string; name: string };
 }
 
 export interface IProjectStats {

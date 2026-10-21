@@ -28,6 +28,15 @@ export function formatRelativeTime(iso: string, now: number = Date.now()): strin
   return "just now";
 }
 
+// How long until `iso`, for a hold that is about to run out: "28 min left", "under 1 min left",
+// or "expired" once it has passed.
+export function formatTimeLeft(iso: string, now: number = Date.now()): string {
+  const minutes = Math.ceil((new Date(iso).getTime() - now) / 60_000);
+  if (minutes <= 0) return "expired";
+  if (minutes === 1) return "under 1 min left";
+  return `${minutes} min left`;
+}
+
 // "Oct 21, 2026, 3:14 PM". The exact time, for a tooltip behind the relative one.
 const dateTimeFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
 

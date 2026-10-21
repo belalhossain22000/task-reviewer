@@ -7,14 +7,17 @@ import ApiError from "../../../errors/ApiErrors";
 import { paginationHelper } from "../../../helpars/paginationHelper";
 import prisma from "../../../shared/prisma";
 import {
+  IAccount,
   ICreateMentorPayload,
   IMentor,
   IMentorListResult,
+  IStudent,
+  IStudentListResult,
 } from "./user.interface";
 
 const saltRounds = Number(config.bcrypt_salt_rounds) || 12;
 
-const mentorSelect = {
+const accountSelect = {
   id: true,
   name: true,
   email: true,
@@ -22,6 +25,19 @@ const mentorSelect = {
   isActive: true,
   createdAt: true,
 } satisfies Prisma.UserSelect;
+
+// Mentors also carry how many decisions (approve / reject) they have made, counted from the
+// review history.
+const mentorSelect = {
+  ...accountSelect,
+  // Decisions only: a "reopened" entry (status PENDING) is not a review.
+  _count: { select: { authoredReviews: { where: { status: { not: "PENDING" as const } } } } },
+} satisfies Prisma.UserSelect;
+
+const toMentor = ({ _count, ...account }: Prisma.UserGetPayload<{ select: typeof mentorSelect }>): IMentor => ({
+  ...account,
+  reviewCount: _count.authoredReviews,
+});
 
 const emailTaken = () =>
   new ApiError(
@@ -41,7 +57,7 @@ const createMentor = async (payload: ICreateMentorPayload): Promise<IMentor> => 
   const hashedPassword = await bcrypt.hash(payload.password, saltRounds);
 
   try {
-    return await prisma.user.create({
+    const mentor = await prisma.user.create({
       data: {
         name: payload.name,
         email: payload.email,
@@ -50,6 +66,7 @@ const createMentor = async (payload: ICreateMentorPayload): Promise<IMentor> => 
       },
       select: mentorSelect,
     });
+    return toMentor(mentor);
   } catch (error) {
     // Two requests with the same email racing past the check above.
     if (
@@ -69,7 +86,7 @@ const getMentors = async (query: {
   const { page, limit, skip } = paginationHelper.calculatePagination(query);
   const where: Prisma.UserWhereInput = { role: Role.MENTOR };
 
-  const [data, total] = await Promise.all([
+  const [rows, total] = await Promise.all([
     prisma.user.findMany({
       where,
       select: mentorSelect,
@@ -82,31 +99,85 @@ const getMentors = async (query: {
 
   return {
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    data,
+    data: rows.map(toMentor),
   };
 };
 
-// Only mentors can be switched here. Admins and students are not touched by this endpoint,
-// so an admin can't lock themselves (or a student) out through it.
-const setMentorActive = async (
-  mentorId: string,
-  isActive: boolean
-): Promise<IMentor> => {
-  const mentor = await prisma.user.findFirst({
-    where: { id: mentorId, role: Role.MENTOR },
+// Switches an account on or off, but only if it has the expected role. Each endpoint passes the
+// one role it is for (mentor or student), so an admin id can never be switched off through
+// either of them: an admin can't lock themselves, or another admin, out.
+const setActive = async (
+  userId: string,
+  role: Role,
+  isActive: boolean,
+  label: string
+): Promise<IAccount> => {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, role },
     select: { id: true },
   });
-  if (!mentor) throw new ApiError(httpStatus.NOT_FOUND, "Mentor not found");
+  if (!user) throw new ApiError(httpStatus.NOT_FOUND, `${label} not found`);
 
   return prisma.user.update({
-    where: { id: mentorId },
+    where: { id: userId },
     data: { isActive },
-    select: mentorSelect,
+    select: accountSelect,
   });
+};
+
+const setMentorActive = (mentorId: string, isActive: boolean) =>
+  setActive(mentorId, Role.MENTOR, isActive, "Mentor");
+
+const setStudentActive = (studentId: string, isActive: boolean) =>
+  setActive(studentId, Role.STUDENT, isActive, "Student");
+
+const getStudents = async (query: {
+  page: number;
+  limit: number;
+  search?: string;
+}): Promise<IStudentListResult> => {
+  const { page, limit, skip } = paginationHelper.calculatePagination(query);
+
+  // `contains` is a SQL LIKE, so `%` and `_` the admin typed would act as wildcards. Escape them
+  // to search for the literal characters.
+  const text = query.search?.replace(/[\\%_]/g, "\\$&");
+
+  const where: Prisma.UserWhereInput = {
+    role: Role.STUDENT,
+    ...(text && {
+      OR: [
+        { name: { contains: text, mode: "insensitive" } },
+        { email: { contains: text, mode: "insensitive" } },
+      ],
+    }),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: { ...accountSelect, _count: { select: { projects: true } } },
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      skip,
+      take: limit,
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  const data: IStudent[] = rows.map(({ _count, ...student }) => ({
+    ...student,
+    projectCount: _count.projects,
+  }));
+
+  return {
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    data,
+  };
 };
 
 export const UserService = {
   createMentor,
   getMentors,
   setMentorActive,
+  getStudents,
+  setStudentActive,
 };

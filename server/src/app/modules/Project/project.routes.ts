@@ -33,11 +33,24 @@ router.get(
   ProjectController.getStats
 );
 
+router.get(
+  "/:id/history",
+  auth(Role.MENTOR, Role.ADMIN),
+  ProjectController.getProjectHistory
+);
+
+// "I'm reviewing this": take a pending project, or give it back.
+router.post("/:id/claim", auth(Role.MENTOR, Role.ADMIN), ProjectController.claimProject);
+router.delete("/:id/claim", auth(Role.MENTOR, Role.ADMIN), ProjectController.releaseProject);
+
 router.patch(
   "/:id/review",
   auth(Role.MENTOR, Role.ADMIN),
   validateRequest(ProjectValidation.reviewProjectSchema),
   ProjectController.reviewProject
 );
+
+// Admin only: put an approved or rejected project back in the queue.
+router.patch("/:id/reopen", auth(Role.ADMIN), ProjectController.reopenProject);
 
 export const ProjectRoutes = router;

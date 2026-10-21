@@ -1,6 +1,6 @@
 # Frontend Design
 
-Next.js (App Router), TailwindCSS, ShadCN. Design only; no code written yet.
+Next.js (App Router), TailwindCSS, ShadCN. Design notes; the app is built, and where it differs from this document the code is right (see the root README).
 Related: [PLAN.md](PLAN.md), [DATABASE.md](DATABASE.md)
 
 ## 1. Design goals
@@ -268,9 +268,10 @@ client/src/
 - [ ] Admin: approve action (optimistic), `RejectDialog`, `ProjectDetailSheet`
 - [ ] Responsive and keyboard pass; `next build` and lint clean
 
-## 11. Questions to settle before building
-1. Brand: indigo accent and the neutral ShadCN look, or a different color?
-2. Product name shown in the navbar (placeholder: "Project Review")?
-3. Student list: "Load more" button or numbered pagination?
-4. Admin row detail: side sheet (proposed) or a separate `/admin/projects/[id]` page?
-5. Dark mode: keep it (small cost with ShadCN) or skip?
+## 11. Questions settled while building
+1. Brand: indigo accent on the neutral ShadCN look. Done.
+2. Product name in the navbar: "Project Review".
+3. Student list: numbered paging (Previous / Next with "Showing 1-5 of 7"), not "Load more": the same control is reused under the mentor table.
+4. Admin row detail: a side sheet, not a separate page.
+5. Dark mode: kept, with a Light / Dark / System menu.
+6. Student navbar: no section links. There is one student page and the form and list sit side by side, so the anchors did nothing.
