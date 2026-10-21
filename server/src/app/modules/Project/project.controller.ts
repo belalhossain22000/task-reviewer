@@ -17,7 +17,7 @@ const createProject = catchAsync(async (req, res) => {
 });
 
 const getMyProjects = catchAsync(async (req, res) => {
-  const query = ProjectValidation.paginationQuerySchema.parse(req.query);
+  const query = ProjectValidation.myProjectsQuerySchema.parse(req.query);
   const result = await ProjectService.getMyProjects(req.user.id, query);
 
   sendResponse(res, {

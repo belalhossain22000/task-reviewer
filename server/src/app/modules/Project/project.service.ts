@@ -6,8 +6,8 @@ import { paginationHelper } from "../../../helpars/paginationHelper";
 import prisma from "../../../shared/prisma";
 import {
   ICreateProjectPayload,
+  IMyProjectsQuery,
   IPaginatedResult,
-  IPaginationQuery,
   IProject,
   IProjectListQuery,
   IProjectStats,
@@ -96,12 +96,29 @@ const createProject = async (
   }
 };
 
+// `%` and `_` act as wildcards inside a SQL LIKE, so escape them to search for the literal characters.
+const escapeLike = (text: string) => text.replace(/[\\%_]/g, "\\$&");
+
 const getMyProjects = async (
   studentId: string,
-  query: IPaginationQuery
+  query: IMyProjectsQuery
 ): Promise<IPaginatedResult<IProject>> => {
   const { page, limit, skip } = paginationHelper.calculatePagination(query);
-  const where: Prisma.ProjectWhereInput = { studentId };
+  const text = query.search && escapeLike(query.search);
+
+  // Always the student's OWN projects: the filters can only narrow the list, never widen it.
+  const where: Prisma.ProjectWhereInput = {
+    studentId,
+    ...(query.status && { status: query.status }),
+    ...(text && {
+      OR: [
+        { name: { contains: text, mode: "insensitive" } },
+        { description: { contains: text, mode: "insensitive" } },
+        { repoUrl: { contains: text, mode: "insensitive" } },
+        { liveUrl: { contains: text, mode: "insensitive" } },
+      ],
+    }),
+  };
 
   const [data, total] = await Promise.all([
     prisma.project.findMany({

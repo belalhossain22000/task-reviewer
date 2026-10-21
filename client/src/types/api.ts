@@ -151,6 +151,12 @@ export interface PaginationParams {
   limit?: number;
 }
 
+// A student's own list. `status: "ALL"` (or leaving it out) means no status filter.
+export interface MyProjectsParams extends PaginationParams {
+  status?: ProjectStatus | "ALL";
+  search?: string;
+}
+
 export interface StudentListParams extends PaginationParams {
   search?: string;
 }

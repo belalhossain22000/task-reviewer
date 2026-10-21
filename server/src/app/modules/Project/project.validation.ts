@@ -37,18 +37,30 @@ const paginationQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10),
 });
 
-// Mentor / admin list. `status=ALL` (or no status) means no status filter.
+// The two filters every project list shares. `status=ALL` (or no status) means no status filter;
+// an empty search means no search.
+const statusFilter = z
+  .enum(["ALL", "PENDING", "APPROVED", "REJECTED"])
+  .optional()
+  .transform((value) => (value === "ALL" ? undefined : value));
+
+const searchFilter = z
+  .string()
+  .trim()
+  .max(100, "Search text is too long")
+  .optional()
+  .transform((value) => value || undefined);
+
+// A student's own list: the same paging, plus the two filters.
+const myProjectsQuerySchema = paginationQuerySchema.extend({
+  status: statusFilter,
+  search: searchFilter,
+});
+
+// Mentor / admin list.
 const listProjectsQuerySchema = paginationQuerySchema.extend({
-  status: z
-    .enum(["ALL", "PENDING", "APPROVED", "REJECTED"])
-    .optional()
-    .transform((value) => (value === "ALL" ? undefined : value)),
-  search: z
-    .string()
-    .trim()
-    .max(100, "Search text is too long")
-    .optional()
-    .transform((value) => value || undefined),
+  status: statusFilter,
+  search: searchFilter,
   // "me" = the person asking; or the id of a mentor / admin. Left out = anyone.
   reviewer: z
     .string()
@@ -95,6 +107,7 @@ const reviewProjectSchema = z
 export const ProjectValidation = {
   createProjectSchema,
   paginationQuerySchema,
+  myProjectsQuerySchema,
   listProjectsQuerySchema,
   projectIdParamSchema,
   reviewProjectSchema,

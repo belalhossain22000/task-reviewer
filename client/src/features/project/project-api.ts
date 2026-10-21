@@ -10,7 +10,7 @@ import type {
   ApiResponse,
   CreateProjectPayload,
   PaginatedResponse,
-  PaginationParams,
+  MyProjectsParams,
   Project,
   ProjectListParams,
   ProjectStats,
@@ -31,7 +31,7 @@ export const projectApi = baseApi.injectEndpoints({
       invalidatesTags: invalidateOnSuccess("MyProject"),
     }),
 
-    getMyProjects: build.query<Page<Project>, PaginationParams | void>({
+    getMyProjects: build.query<Page<Project>, MyProjectsParams | void>({
       query: (params) => ({ url: "/projects/mine", params: params ?? undefined }),
       transformResponse: (response: PaginatedResponse<Project>) =>
         unwrapPage(response),

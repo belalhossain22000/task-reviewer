@@ -46,6 +46,12 @@ export interface IReviewableProject extends IProject {
   claimExpiresAt: Date | null;
 }
 
+// A student's own list: paging plus optional filters.
+export interface IMyProjectsQuery extends IPaginationQuery {
+  status?: ProjectStatus;
+  search?: string;
+}
+
 export interface IProjectListQuery extends IPaginationQuery {
   status?: ProjectStatus;
   search?: string;

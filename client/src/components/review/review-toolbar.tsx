@@ -47,8 +47,9 @@ export function ReviewToolbar({
 }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      {/* Scrolls sideways on a narrow phone instead of squeezing the labels. */}
-      <div className="-mx-1 overflow-x-auto px-1">
+      {/* Scrolls sideways on a narrow phone instead of squeezing the labels. `overflow-y-hidden`: the
+          tabs are 1px taller than the box, which would otherwise show a tiny vertical scrollbar. */}
+      <div className="-mx-1 overflow-x-auto overflow-y-hidden px-1">
         <Tabs value={status} onValueChange={(value) => onStatusChange(value as StatusFilter)}>
           <TabsList>
             {STATUS_FILTERS.map((filter) => (
