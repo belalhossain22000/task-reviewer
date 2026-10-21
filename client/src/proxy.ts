@@ -1,6 +1,7 @@
 import { jwtVerify } from "jose";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { HOME_BY_ROLE as HOME } from "@/lib/routes";
 import { ROLES, type Role } from "@/types/api";
 
 // Runs on the server before a page is rendered. It reads the login cookie that Express set
@@ -8,13 +9,6 @@ import { ROLES, type Role } from "@/types/api";
 // to the right place. It protects PAGES; the data itself is protected by the API.
 
 const AUTH_COOKIE = "token";
-
-// Where each role lands after login.
-const HOME: Record<Role, string> = {
-  STUDENT: "/student",
-  MENTOR: "/review",
-  ADMIN: "/review",
-};
 
 // Who may open which part of the site. Anything not listed here (404s etc.) is not guarded.
 const PROTECTED: { prefix: string; roles: Role[] }[] = [
