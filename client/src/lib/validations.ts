@@ -21,13 +21,36 @@ const email = z
   .email("Invalid email address")
   .max(254, "Email is too long");
 
+// The rules for choosing a password. One list feeds both the schema below and the live
+// checklist under the password field (<PasswordRules />), so they can't disagree.
+// `message` matches what the API answers.
+export const PASSWORD_RULES = [
+  {
+    label: "At least 8 characters",
+    message: "Password must be at least 8 characters",
+    test: (value: string) => value.length >= 8,
+  },
+  {
+    label: "A letter",
+    message: "Password must contain at least one letter",
+    test: (value: string) => /[A-Za-z]/.test(value),
+  },
+  {
+    label: "A number",
+    message: "Password must contain at least one number",
+    test: (value: string) => /\d/.test(value),
+  },
+];
+
 // 72 is bcrypt's input limit on the server.
 const newPassword = z
   .string()
-  .min(8, "Password must be at least 8 characters")
   .max(72, "Password must be at most 72 characters")
-  .regex(/[A-Za-z]/, "Password must contain at least one letter")
-  .regex(/\d/, "Password must contain at least one number");
+  .superRefine((value, ctx) => {
+    for (const rule of PASSWORD_RULES) {
+      if (!rule.test(value)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: rule.message });
+    }
+  });
 
 /* ---------- Auth ---------- */
 
